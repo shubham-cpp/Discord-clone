@@ -50,19 +50,18 @@ export const MembersModal = () => {
 
     const onRoleChange = async (memberId: string, role: MemberRole) => {
         try{
-            setLoadingId(memberId)
+            setLoadingId(memberId);
             const url = qs.stringifyUrl({
-                url:  `/api/members/${memberId}`,
+                url: `/api/members/${memberId}`,
                 query: {
-                    serverdId: server?.id,
-                    memberId, 
+                serverId: server?.id,
                 }
-            }) 
+            });
 
-            const response = await axios.patch(url, { role })
-            
+            const response = await axios.patch(url, { role });
+
             router.refresh();
-            onOpen("members", {  server: response.data })
+            onOpen("members", { server: response.data });
         }catch(err){
             console.log(err)
         }finally{
