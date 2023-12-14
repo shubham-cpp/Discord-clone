@@ -42,7 +42,7 @@ export const InviteModal = () => {
             
             setIsLoading(true)
             const response = await axios.patch(`/api/servers/${server?.id}/invite-code`) // get server code from db
-
+            console.log({response: response.data})
             onOpen('invite', { server: response.data }) // updated invite code
 
         }catch(err){
