@@ -2,6 +2,7 @@ import { Hash } from "lucide-react"
 import { MobileToggle } from "@/components/mobile-toggle";
 import { SocketIndicator } from "../ui/socket-indicator";
 import { ChatVideoButton } from "./chat-video-button";
+import { ModeToggle } from "../mode-toggle";
 
 interface ChatHeaderProps {
     serverId: string;
@@ -34,6 +35,7 @@ export const ChatHeader = ({
                     <ChatVideoButton />
                 )}
                 <SocketIndicator />
+                <ModeToggle />
             </div>       
         </div>
     )
