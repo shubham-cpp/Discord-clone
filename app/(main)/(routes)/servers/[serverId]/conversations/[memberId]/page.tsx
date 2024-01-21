@@ -11,101 +11,92 @@ import { ChatInput } from "@/components/chat/chat-input";
 import { MediaRoom } from "@/components/media.room";
 
 interface MemberIdPageProps {
-    params: {
-        memberId: string;
-        serverId: string;
+  params: {
+    memberId: string;
+    serverId: string;
+  };
+  searchParams: {
+    video?: boolean;
+  };
+}
+
+const MemberIdPage = async ({ params, searchParams }: MemberIdPageProps) => {
+  const profile = await currentProfile();
+
+  if (!profile) {
+    return redirectToSignIn();
+  }
+
+  const currentMember = await db.member.findFirst({
+    where: {
+      serverId: params.serverId,
+      profileId: profile.id,
     },
-    searchParams: {
-        video?: boolean;
-    }
-}
+    include: {
+      profile: true,
+    },
+  });
 
-const MemberIdPage = async ({
-    params,
-    searchParams
-}: MemberIdPageProps ) => {
+  if (!currentMember) {
+    return redirect("/");
+  }
 
-    const profile = await currentProfile();
+  // currently logged in user and member that user has clicked will be in the conversation
+  const conversation = await getOrCreateConversation(
+    currentMember.id,
+    params.memberId,
+  );
 
-    if(!profile){
-        return redirectToSignIn();
-    }
+  if (!conversation) {
+    return redirect(`/servers/${params.serverId}`);
+  }
 
-    const currentMember = await db.member.findFirst({
-        where:{
-            serverId: params.serverId,
-            profileId: profile.id
-        },
-        include:{
-            profile: true
-        }
-    }) 
+  const { memberOne, memberTwo } = conversation;
 
+  // compare member one and memeber two look at their profile id and if it matched our current profile id we are picking opposite member
+  const otherMemebr =
+    memberOne.profileId === profile.id ? memberTwo : memberOne;
 
-    if(!currentMember) {
-        return redirect('/')
-    }
+  return (
+    <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
+      <ChatHeader
+        imageUrl={otherMemebr.profile?.imageUrl}
+        name={otherMemebr.profile?.name}
+        serverId={params.serverId}
+        type="conversation"
+      />
 
+      {searchParams.video && (
+        <MediaRoom chatId={conversation.id} video={true} audio={true} />
+      )}
 
-    // currently logged in user and member that user has clicked will be in the conversation
-    const conversation = await getOrCreateConversation(currentMember.id, params.memberId)
+      {!searchParams.video && (
+        <>
+          <ChatMessages
+            member={currentMember}
+            name={otherMemebr.profile.name}
+            chatId={conversation.id}
+            type={"conversation"}
+            apiUrl="/api/direct-messages"
+            paramKey="conversationId"
+            paramValue={conversation.id}
+            socketUrl="/api/socket/direct-messages"
+            socketQuery={{
+              conversationId: conversation.id,
+            }}
+          />
+          <ChatInput
+            name={otherMemebr.profile.name}
+            type="conversation"
+            apiUrl="/api/socket/direct-messages"
+            query={{
+              conversationId: conversation.id,
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+};
 
-    if(!conversation){
-        return redirect(`/servers/${params.serverId}`)
-    }
-
-    const { memberOne, memberTwo } = conversation;
-
-    // compare member one and memeber two look at their profile id and if it matched our current profile id we are picking opposite member
-    const otherMemebr = memberOne.profileId === profile.id ? memberTwo : memberOne
-
-
-
-    return ( 
-        <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
-            <ChatHeader 
-                imageUrl={otherMemebr.profile?.imageUrl}
-                name={otherMemebr.profile?.name}
-                serverId={params.serverId}
-                type="conversation"
-            />
-            
-            {searchParams.video && (
-                <MediaRoom 
-                    chatId={conversation.id}
-                    video={true}
-                    audio={true}
-                />
-            )}
-
-            {!searchParams.video && (
-                <>
-                <ChatMessages 
-                    member={currentMember}
-                    name={otherMemebr.profile.name}
-                    chatId={conversation.id}
-                    type={"conversation"}
-                    apiUrl="/api/direct-messages"
-                    paramKey="conversationId"
-                    paramValue={conversation.id}
-                    socketUrl="/api/socket/direct-messages"
-                    socketQuery={{
-                        conversationId: conversation.id
-                    }}
-                />
-                <ChatInput 
-                    name={otherMemebr.profile.name}
-                    type="conversation"
-                    apiUrl="/api/socket/direct-messages"
-                    query={{
-                        conversationId: conversation.id
-                    }}
-                />
-                </>
-            )}
-            
-        </div> 
-    );
-}
- 
 export default MemberIdPage;

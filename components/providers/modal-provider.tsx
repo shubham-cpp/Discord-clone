@@ -13,32 +13,28 @@ import { EditChannelModal } from "@/components/modals/edit-channel-modal";
 import { MessageFileModal } from "@/components/modals/message-file-modal";
 import { DeleteMessageModal } from "@/components/modals/delete-message-modal";
 
-
 export const ModalProvider = () => {
+  const [isMounted, setIsMounted] = useState(false);
 
-    const [ isMounted, setIsMounted ] = useState(false)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-    useEffect(() => {
+  if (!isMounted) return null;
 
-        setIsMounted(true)
-
-    }, [])
-
-    if(!isMounted) return null
-
-    return(
-        <>
-            <CreateServerModal />
-            <InviteModal />
-            <EditServerModal />
-            <MembersModal />
-            <CreateChannelModal />
-            <LeaverServerModal />
-            <DeleteServerModal />
-            <DeletChannelModal />
-            <EditChannelModal />
-            <MessageFileModal />
-            <DeleteMessageModal />
-        </>
-    )
-}
+  return (
+    <>
+      <CreateServerModal />
+      <InviteModal />
+      <EditServerModal />
+      <MembersModal />
+      <CreateChannelModal />
+      <LeaverServerModal />
+      <DeleteServerModal />
+      <DeletChannelModal />
+      <EditChannelModal />
+      <MessageFileModal />
+      <DeleteMessageModal />
+    </>
+  );
+};
