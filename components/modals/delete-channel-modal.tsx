@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import axios from "axios";
 import qs from "query-string";
 import { useRouter } from "next/navigation";
@@ -22,13 +22,16 @@ export const DeletChannelModal = () => {
 
   const router = useRouter();
 
-  const isModalOpen = isOpen && type === "deleteChannel";
+  const isModalOpen = useMemo(
+    () => isOpen && type === "deleteChannel",
+    [isOpen, type],
+  );
 
   const [isLoading, setIsLoading] = useState(false);
 
   const { server, channel } = data;
 
-  const onClick = async () => {
+  const onClick = useCallback(async () => {
     try {
       setIsLoading(true);
       const url = qs.stringifyUrl({
@@ -47,7 +50,7 @@ export const DeletChannelModal = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [channel?.id, onClose, router, server?.id]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={onClose}>

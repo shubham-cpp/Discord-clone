@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/file-upload";
 import { useModal } from "@/hooks/use-modal-store";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Server name is required" }),
@@ -36,7 +36,10 @@ const formSchema = z.object({
 export const EditServerModal = () => {
   const { isOpen, onClose, type, data } = useModal();
 
-  const isModalOpen = isOpen && type === "editServer";
+  const isModalOpen = useMemo(
+    () => isOpen && type === "editServer",
+    [isOpen, type],
+  );
 
   const { server } = data;
 
@@ -59,22 +62,25 @@ export const EditServerModal = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (formData: z.infer<typeof formSchema>) => {
-    try {
-      await axios.patch(`/api/servers/${server?.id}`, formData);
+  const onSubmit = useCallback(
+    async (formData: z.infer<typeof formSchema>) => {
+      try {
+        await axios.patch(`/api/servers/${server?.id}`, formData);
 
-      form.reset();
-      router.refresh();
-      onClose();
-    } catch (error) {
-      console.log(error);
-    }
-  };
+        form.reset();
+        router.refresh();
+        onClose();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [form, router, server, onClose],
+  );
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     form.reset();
     onClose();
-  };
+  }, [form, onClose]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>

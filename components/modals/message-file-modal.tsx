@@ -19,6 +19,7 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/file-upload";
 import { useModal } from "@/hooks/use-modal-store";
+import { useCallback } from "react";
 
 const formSchema = z.object({
   fileUrl: z.string().min(1, { message: "Attchment is required" }),
@@ -40,32 +41,35 @@ export const MessageFileModal = () => {
     },
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     form.reset();
     onClose();
-  };
+  }, [form, onClose]);
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (formData: z.infer<typeof formSchema>) => {
-    try {
-      const url = qs.stringifyUrl({
-        url: apiUrl || "",
-        query,
-      });
+  const onSubmit = useCallback(
+    async (formData: z.infer<typeof formSchema>) => {
+      try {
+        const url = qs.stringifyUrl({
+          url: apiUrl || "",
+          query,
+        });
 
-      await axios.post(url, {
-        ...formData,
-        content: formData.fileUrl,
-      });
+        await axios.post(url, {
+          ...formData,
+          content: formData.fileUrl,
+        });
 
-      form.reset();
-      router.refresh();
-      handleClose();
-    } catch (error) {
-      console.log(error);
-    }
-  };
+        form.reset();
+        router.refresh();
+        handleClose();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [apiUrl, query, form, router, handleClose],
+  );
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>

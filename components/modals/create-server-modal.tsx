@@ -1,11 +1,13 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
+import { FileUpload } from "@/components/file-upload";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -23,9 +25,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { FileUpload } from "@/components/file-upload";
 import { useModal } from "@/hooks/use-modal-store";
+import { useCallback, useMemo } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Server name is required" }),
@@ -35,7 +36,10 @@ const formSchema = z.object({
 export const CreateServerModal = () => {
   const { isOpen, onClose, type } = useModal();
 
-  const isModalOpen = isOpen && type === "createServer";
+  const isModalOpen = useMemo(
+    () => isOpen && type === "createServer",
+    [isOpen, type],
+  );
 
   const router = useRouter();
 
@@ -49,22 +53,25 @@ export const CreateServerModal = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (formData: z.infer<typeof formSchema>) => {
-    try {
-      await axios.post("/api/servers", formData);
+  const onSubmit = useCallback(
+    async (formData: z.infer<typeof formSchema>) => {
+      try {
+        await axios.post("/api/servers", formData);
 
-      form.reset();
-      router.refresh();
-      onClose();
-    } catch (error) {
-      console.log(error);
-    }
-  };
+        form.reset();
+        router.refresh();
+        onClose();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [form, onClose, router],
+  );
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     form.reset();
     onClose();
-  };
+  }, [form, onClose]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>

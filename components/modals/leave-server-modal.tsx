@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { useModal } from "@/hooks/use-modal-store";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
@@ -25,7 +25,7 @@ export const LeaverServerModal = () => {
 
   const { server } = data;
 
-  const onClick = async () => {
+  const onClick = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -38,7 +38,7 @@ export const LeaverServerModal = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onClose, router, server?.id]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={onClose}>

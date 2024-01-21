@@ -1,21 +1,22 @@
 "use client";
 
-import qs from "query-string";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, Video, VideoOff } from "lucide-react";
 import { ActionTooltip } from "@/components/ui/action-tooltip";
+import { Video, VideoOff } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import qs from "query-string";
+import { useCallback, useMemo } from "react";
 
 export const ChatVideoButton = () => {
   const pathName = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const isVideo = searchParams?.get("video");
+  const isVideo = useMemo(() => searchParams?.get("video"), [searchParams]);
 
   const Icon = isVideo ? VideoOff : Video;
   const tooltipLabel = isVideo ? "End Video Chat" : "Start Video chat";
 
-  const onClick = () => {
+  const onClick = useCallback(() => {
     const url = qs.stringifyUrl(
       {
         url: pathName || "",
@@ -27,7 +28,7 @@ export const ChatVideoButton = () => {
     );
 
     router.push(url);
-  };
+  }, [isVideo, pathName, router]);
 
   return (
     <ActionTooltip side={"bottom"} label={tooltipLabel}>

@@ -34,7 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useModal } from "@/hooks/use-modal-store";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 const formSchema = z.object({
   name: z
@@ -51,7 +51,10 @@ const formSchema = z.object({
 export const CreateChannelModal = () => {
   const { isOpen, onClose, type, data } = useModal();
 
-  const isModalOpen = isOpen && type === "createChannel";
+  const isModalOpen = useMemo(
+    () => isOpen && type === "createChannel",
+    [isOpen, type],
+  );
   const { channelType } = data;
 
   const router = useRouter();
@@ -72,32 +75,35 @@ export const CreateChannelModal = () => {
     } else {
       form.setValue("type", ChannelType.TEXT);
     }
-  }, [channelType, form]);
+  }, [channelType, form.setValue]);
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (formData: z.infer<typeof formSchema>) => {
-    try {
-      const url = qs.stringifyUrl({
-        url: "/api/channels",
-        query: {
-          serverId: params?.serverId,
-        },
-      });
-      await axios.post(url, formData);
+  const onSubmit = useCallback(
+    async (formData: z.infer<typeof formSchema>) => {
+      try {
+        const url = qs.stringifyUrl({
+          url: "/api/channels",
+          query: {
+            serverId: params?.serverId,
+          },
+        });
+        await axios.post(url, formData);
 
-      form.reset();
-      router.refresh();
-      onClose();
-    } catch (error) {
-      console.log(error);
-    }
-  };
+        form.reset();
+        router.refresh();
+        onClose();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [form, onClose, params?.serverId, router],
+  );
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     form.reset();
     onClose();
-  };
+  }, [form, onClose]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>

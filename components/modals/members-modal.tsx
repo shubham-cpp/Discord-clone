@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { useModal } from "@/hooks/use-modal-store";
-import { useOrigin } from "@/hooks/use-origin";
 
-import qs from "query-string";
-import axios from "axios";
 import { ServerWithMembersWithProfiles } from "@/types";
+import axios from "axios";
+import qs from "query-string";
 
 import {
   Dialog,
@@ -16,8 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserAvatar } from "@/components/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,10 +23,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
-  DropdownMenuTrigger,
   DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserAvatar } from "@/components/user-avatar";
 
+import { MemberRole } from "@prisma/client";
 import {
   Check,
   Gavel,
@@ -38,10 +38,8 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
-  ShieldIcon,
-  ShieldQuestion,
+  ShieldQuestion
 } from "lucide-react";
-import { MemberRole } from "@prisma/client";
 import { useRouter } from "next/navigation";
 
 const roleIconMap = {
@@ -55,32 +53,34 @@ export const MembersModal = () => {
 
   const { isOpen, onClose, type, data, onOpen } = useModal();
   const [loadingId, setLoadingId] = useState("");
-  const origin = useOrigin();
 
   const isModalOpen = isOpen && type === "members";
 
   const { server } = data as { server: ServerWithMembersWithProfiles };
 
-  const onRoleChange = async (memberId: string, role: MemberRole) => {
-    try {
-      setLoadingId(memberId);
-      const url = qs.stringifyUrl({
-        url: `/api/members/${memberId}`,
-        query: {
-          serverId: server?.id,
-        },
-      });
+  const onRoleChange = useCallback(
+    async (memberId: string, role: MemberRole) => {
+      try {
+        setLoadingId(memberId);
+        const url = qs.stringifyUrl({
+          url: `/api/members/${memberId}`,
+          query: {
+            serverId: server?.id,
+          },
+        });
 
-      const response = await axios.patch(url, { role });
+        const response = await axios.patch(url, { role });
 
-      router.refresh();
-      onOpen("members", { server: response.data });
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoadingId("");
-    }
-  };
+        router.refresh();
+        onOpen("members", { server: response.data });
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoadingId("");
+      }
+    },
+    [onOpen, router, server?.id],
+  );
 
   const onKick = async (memberId: string) => {
     try {

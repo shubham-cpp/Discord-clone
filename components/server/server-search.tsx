@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -16,13 +16,11 @@ interface ServerSearchProps {
   data: {
     label: string;
     type: "channel" | "member";
-    data:
-      | {
-          icon: React.ReactNode;
-          name: string;
-          id: string;
-        }[]
-      | undefined;
+    data?: {
+      icon: React.ReactNode;
+      name: string;
+      id: string;
+    }[];
   }[];
 }
 
@@ -42,25 +40,22 @@ export const ServerSearch = ({ data }: ServerSearchProps) => {
     document.addEventListener("keydown", down);
 
     return () => document.removeEventListener("keydown", down);
-  });
+  }, []);
 
-  const onClick = ({
-    id,
-    type,
-  }: {
-    id: string;
-    type: "channel" | "member";
-  }) => {
-    setOpen(false);
+  const onClick = useCallback(
+    ({ id, type }: { id: string; type: "channel" | "member" }) => {
+      setOpen(false);
 
-    if (type === "member") {
-      return router.push(`/servers/${params?.serverId}/conversations/${id}`);
-    }
+      if (type === "member") {
+        return router.push(`/servers/${params?.serverId}/conversations/${id}`);
+      }
 
-    if (type === "channel") {
-      return router.push(`/servers/${params?.serverId}/channels/${id}`);
-    }
-  };
+      if (type === "channel") {
+        return router.push(`/servers/${params?.serverId}/channels/${id}`);
+      }
+    },
+    [params?.serverId, router],
+  );
 
   return (
     <>

@@ -6,6 +6,7 @@ import { Edit, Hash, Lock, Mic, Trash, Video } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { ActionTooltip } from "@/components/ui/action-tooltip";
 import { ModalType, useModal } from "@/hooks/use-modal-store";
+import { useCallback } from "react";
 
 interface ServerChannelProps {
   channel: Channel;
@@ -36,10 +37,13 @@ export const ServerChannel = ({
     router.push(`/servers/${params?.serverId}/channels/${channel.id}`);
   };
 
-  const onAction = (e: React.MouseEvent, action: ModalType) => {
-    e.stopPropagation();
-    onOpen(action, { channel, server });
-  };
+  const onAction = useCallback(
+    (e: React.MouseEvent, action: ModalType) => {
+      e.stopPropagation();
+      onOpen(action, { channel, server });
+    },
+    [channel, onOpen, server],
+  );
 
   return (
     <button

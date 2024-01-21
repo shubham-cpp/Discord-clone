@@ -10,7 +10,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { ActionTooltip } from "@/components/ui/action-tooltip";
 import { Edit, FileIcon, ShieldAlert, ShieldCheck, Trash } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRouter, useParams } from "next/navigation";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -62,13 +62,13 @@ export const ChatItem = ({
   const params = useParams();
   const router = useRouter();
 
-  const onMemberClick = () => {
+  const onMemberClick = useCallback(() => {
     if (member.id === currentMember.id) {
       return;
     }
 
     router.push(`/servers/${params?.serverId}/conversations/${member.id}`);
-  };
+  }, [currentMember.id, member.id, params?.serverId, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,21 +79,24 @@ export const ChatItem = ({
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const url = qs.stringifyUrl({
-        url: `${socketUrl}/${id}`,
-        query: socketQuery,
-      });
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      try {
+        const url = qs.stringifyUrl({
+          url: `${socketUrl}/${id}`,
+          query: socketQuery,
+        });
 
-      await axios.patch(url, values);
+        await axios.patch(url, values);
 
-      form.reset();
-      setIsEditing(false);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+        form.reset();
+        setIsEditing(false);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    [form, id, socketQuery, socketUrl],
+  );
 
   useEffect(() => {
     form.reset({
@@ -101,19 +104,34 @@ export const ChatItem = ({
     });
   }, [content, form]);
 
-  const fileType = fileUrl?.split(".").pop();
+  // const fileType = fileUrl?.split(".").pop();
 
-  const isAdmin = currentMember.role === MemberRole.ADMIN;
-  const isMoederator = currentMember.role === MemberRole.MODERATOR;
-  const isOwner = currentMember.id === member.id;
-  const canDeleteMessage = !deleted && (isAdmin || isMoederator || isOwner);
-  const canEditMessage = !deleted && isOwner && !fileUrl;
-  const isPDF = fileType === "pdf";
-  const isImage = !isPDF && fileUrl;
+  const isAdmin = useMemo(
+    () => currentMember.role === MemberRole.ADMIN,
+    [currentMember],
+  );
+  const isMoederator = useMemo(
+    () => currentMember.role === MemberRole.MODERATOR,
+    [currentMember],
+  );
+  const isOwner = useMemo(
+    () => currentMember.id === member.id,
+    [currentMember, member],
+  );
+  const canDeleteMessage = useMemo(
+    () => !deleted && (isAdmin || isMoederator || isOwner),
+    [deleted, isAdmin, isMoederator, isOwner],
+  );
+  const canEditMessage = useMemo(
+    () => !deleted && isOwner && !fileUrl,
+    [deleted, isOwner, fileUrl],
+  );
+  const isPDF = useMemo(() => fileUrl?.split(".").pop() === "pdf", [fileUrl]);
+  const isImage = useMemo(() => !isPDF && !!fileUrl, [isPDF, fileUrl]);
 
   useEffect(() => {
-    const handleKeyDown = (event: any) => {
-      if (event.key === "Escape" || event.keyCode === "27") {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.keyCode === 27) {
         setIsEditing(false);
       }
     };
@@ -153,14 +171,14 @@ export const ChatItem = ({
 
           {isImage && (
             <a
-              href={fileUrl}
+              href={fileUrl!}
               target="_blank"
               rel="noopener noreferrer"
               className="relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48"
             >
               <Image
                 alt={content}
-                src={fileUrl}
+                src={fileUrl!}
                 fill
                 className="object-cover"
               />

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useOrigin } from "@/hooks/use-origin";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import axios from "axios";
 
 export const InviteModal = () => {
@@ -21,7 +21,10 @@ export const InviteModal = () => {
 
   const origin = useOrigin();
 
-  const isModalOpen = isOpen && type === "invite";
+  const isModalOpen = useMemo(
+    () => isOpen && type === "invite",
+    [isOpen, type],
+  );
 
   const { server } = data;
 
@@ -30,16 +33,16 @@ export const InviteModal = () => {
 
   const inviteUrl = `${origin}/invite/${server?.inviteCode}`;
 
-  const onCopy = () => {
+  const onCopy = useCallback(() => {
     navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
 
     setTimeout(() => {
       setCopied(false);
     }, 1000);
-  };
+  }, [inviteUrl]);
 
-  const onNew = async () => {
+  const onNew = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await axios.patch(
@@ -52,7 +55,7 @@ export const InviteModal = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onOpen, server?.id]);
 
   return (
     <Dialog open={isModalOpen} onOpenChange={onClose}>

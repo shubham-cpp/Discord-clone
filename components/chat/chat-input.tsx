@@ -13,6 +13,8 @@ import { Plus } from "lucide-react";
 import { useModal } from "@/hooks/use-modal-store";
 import { EmojiPicker } from "@/components/emoji-picker";
 import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ChatInputProps {
   apiUrl: string;
@@ -30,6 +32,33 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
 
   const router = useRouter();
 
+  const queryKey = `chat:${query.channel}`;
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    onMutate: async (values: z.infer<typeof formSchema>) => {
+      await queryClient.cancelQueries({ queryKey: [queryKey] });
+
+      const previousMessages = queryClient.getQueryData([queryKey]);
+
+      if (previousMessages) {
+        queryClient.setQueryData([queryKey], (old: any) => [
+          ...old,
+          values.content,
+        ]);
+        return previousMessages;
+      }
+      return [];
+    },
+    onError: (_, _, context) => {
+      if (context?.previousMessages)
+        queryClient.setQueryData([queryKey], context.previousMessages);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [queryKey] });
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,21 +68,24 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const url = qs.stringifyUrl({
-        url: apiUrl,
-        query,
-      });
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      try {
+        const url = qs.stringifyUrl({
+          url: apiUrl,
+          query,
+        });
 
-      await axios.post(url, values);
+        await axios.post(url, values);
 
-      form.reset();
-      router.refresh();
-    } catch (err) {
-      console.log({ err });
-    }
-  };
+        form.reset();
+        router.refresh();
+      } catch (err) {
+        console.log({ err });
+      }
+    },
+    [apiUrl, form, query, router],
+  );
 
   return (
     <Form {...form}>
